@@ -23,7 +23,10 @@
   "homepage": "https://github.com/fac-31/Pro0428-MindPalaceBackend#readme",
   "dependencies": {
     "dotenv": "^16.5.0",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "openai": "^4.96.2",
+    "zod": "^3.24.3",
+    "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
