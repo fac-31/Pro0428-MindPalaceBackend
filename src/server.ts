@@ -8,8 +8,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 import cardRouter from "./routes/cardRouter";
+import topicRouter from "./routes/topicRouter";
 
 app.use("/card", cardRouter);
+app.use("/topic", topicRouter);
 
 const PORT = process.env.PORT || 5000;
 
