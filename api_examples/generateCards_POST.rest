@@ -1,0 +1,41 @@
+POST http://localhost:5000/card/generateCards
+Content-Type: application/json
+
+# Example Response:
+# {
+#   cards: [
+#     {
+#       question: 'What does a red traffic light indicate you must do?',
+#       topic: 'Traffic Signals',
+#       options: [
+#         'Pause briefly and then proceed if safe',
+#         'Reduce your speed and prepare to stop',
+#         'Stop and wait until the light turns green',
+#         'Proceed with caution'
+#       ],
+#       correctAnswerIndex: 2
+#     },
+#     {
+#       question: 'What is the purpose of a broken white line on the road?',
+#       topic: 'Road Markings',
+#       options: [
+#         'It indicates a pedestrian crossing is nearby',
+#         'It indicates no passing or lane changes are allowed',
+#         'It separates two lanes of traffic moving in the same direction',
+#         'It marks the edge of the road'
+#       ],
+#       correctAnswerIndex: 2
+#     },
+#     {
+#       question: 'When approaching a pedestrian crossing with pedestrians waiting, what should you do?',     
+#       topic: 'Pedestrian Right of Way',
+#       options: [
+#         'Accelerate to clear the crossing before pedestrians start crossing',
+#         'Stop and give way to the pedestrians waiting to cross',
+#         'Continue driving at the same speed',
+#         "Slow down but don't stop as pedestrians should wait until you're gone"
+#       ],
+#       correctAnswerIndex: 1
+#     }
+#   ]
+# }
