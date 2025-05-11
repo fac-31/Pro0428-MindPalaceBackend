@@ -133,6 +133,23 @@ async function getTopicById(token: string, id: string)
     return {  topic: data, error } as { topic : Tables<'topics'> | null, error: PostgrestError | null };
   }
 
+  
+async function getSubtopicByTopicId(token: string, id: string) 
+{
+  const supabase = createSupabaseClient(token);
+  const { data: { user } } = await supabase.auth.getUser();
+
+
+  const { data, error } = await supabase
+    .from('subtopics')
+    .select('*')
+    .eq('topic_id', id)
+    .eq('user_id', user.id);
+    
+    return { subtopics: data, error } as { subtopics: Tables<'subtopics'>[] | null, error: PostgrestError | null };
+}
+
+
 const supabaseUrl = 'https://wkstbehsenrlwhtaqfgq.supabase.co'
 export async function getTopicsModel(req: Request, res: Response) {
   
@@ -145,23 +162,35 @@ export async function getTopicsModel(req: Request, res: Response) {
       //and so forth... (note: if you create a topic with an existing name an error will be returned)
       //const newTopic = await createNewTopic(token, "ninth");
       
+      let firstTopicID : string = "";
+
       const { alltopics , error } = await getTopics(token);
       for (const element of alltopics) {
         const currentTopic = await getTopicById(token, element.id);
-        console.log("current topic is");
-        console.log(currentTopic.topic.title);
+        if (firstTopicID == "")
+        {
+          firstTopicID = element.id;
+        }
+        //console.log("current topic is");
+        //console.log(currentTopic.topic.title);
 
-        const newSubtopicTitle = "firstSubtopic";
+        const newSubtopicTitle = "third_subtopic";
         const design = "design";
         const colour = "colour";
 
+        //note creation will fail if subtopic of the same name already exists for this user.
         const newSubtopic = await createNewSubtopic(token, 
           newSubtopicTitle, 
           currentTopic.topic.id,
           design,
           colour);
 
-          
+      }
+
+      const { subtopics , error : subtopic_error } = await getSubtopicByTopicId(token,firstTopicID);
+      for (const element of subtopics) {
+          console.log(`subtopic ${element.id}`);
+          console.log(element.title);
       }
 
       
