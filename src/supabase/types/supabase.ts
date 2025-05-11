@@ -143,22 +143,31 @@ export type Database = {
       }
       subtopics: {
         Row: {
+          colour: string | null
           created_at: string
+          design: string | null
           id: string
           title: string
           topic_id: string | null
+          user_id: string
         }
         Insert: {
+          colour?: string | null
           created_at?: string
+          design?: string | null
           id?: string
           title?: string
           topic_id?: string | null
+          user_id: string
         }
         Update: {
+          colour?: string | null
           created_at?: string
+          design?: string | null
           id?: string
           title?: string
           topic_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -168,26 +177,33 @@ export type Database = {
             referencedRelation: "topics"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subtopics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       topic_styles: {
         Row: {
           colour: string | null
-          component: string | null
+          design: string | null
           id: string
           topic_id: string
           user_id: string
         }
         Insert: {
           colour?: string | null
-          component?: string | null
+          design?: string | null
           id?: string
           topic_id: string
           user_id: string
         }
         Update: {
           colour?: string | null
-          component?: string | null
+          design?: string | null
           id?: string
           topic_id?: string
           user_id?: string

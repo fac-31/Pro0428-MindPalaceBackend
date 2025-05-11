@@ -12,6 +12,28 @@ function createSupabaseClient(token: string) {
     }
   });
 }
+async function insertSubtopic(token: string, title: string, topicId : string, design: string, colour : string) {
+  const supabase = createSupabaseClient(token);
+  
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const newSubtopic: TablesInsert<'subtopics'> = {
+    user_id: user.id,
+    title,
+    topic_id : topicId,
+    design,
+    colour
+  };
+
+const { data, error } = await supabase
+    .from('subtopics')
+    .insert(newSubtopic)
+    .select()
+    .single();
+    
+  return { data, error } as { data: Tables<'subtopics'> | null, error: PostgrestError | null };
+}
+
 async function insertTopic(token: string, title: string) {
   const supabase = createSupabaseClient(token);
   
@@ -58,6 +80,37 @@ async function createNewTopic(token: string, title: string) {
   }
 }
 
+async function createNewSubtopic(token: string, title: string, topicId : string, design: string, colour : string) {
+  try {
+    // Validate input
+    if (!title.trim()) {
+      throw new Error("Subtopic title cannot be empty");
+    }
+    
+    const result = await insertSubtopic(token, title, topicId, design, colour);
+    
+    if (result.error) {
+      // Handle Supabase error
+      if (result.error.code === '23505') {
+        throw new Error("A Subtopic with this title for this user already exists");
+      } else {
+        throw new Error(`Database error: ${result.error.message}`);
+      }
+    }
+    
+    if (!result.data) {
+      throw new Error("Sub was not created");
+    }
+    
+    return result.data as Tables<'subtopics'> 
+  } catch (err) {
+    console.error("Failed to create subtopic:", err);
+    throw err;
+  }
+}
+
+
+
 async function getTopics(token: string) 
 {
   const supabase = createSupabaseClient(token);
@@ -90,13 +143,25 @@ export async function getTopicsModel(req: Request, res: Response) {
       }
   
       //and so forth... (note: if you create a topic with an existing name an error will be returned)
-      const newTopic = await createNewTopic(token, "ninth");
+      //const newTopic = await createNewTopic(token, "ninth");
       
       const { alltopics , error } = await getTopics(token);
       for (const element of alltopics) {
         const currentTopic = await getTopicById(token, element.id);
         console.log("current topic is");
         console.log(currentTopic.topic.title);
+
+        const newSubtopicTitle = "firstSubtopic";
+        const design = "design";
+        const colour = "colour";
+
+        const newSubtopic = await createNewSubtopic(token, 
+          newSubtopicTitle, 
+          currentTopic.topic.id,
+          design,
+          colour);
+
+          
       }
 
       
