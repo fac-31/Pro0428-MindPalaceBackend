@@ -13,10 +13,10 @@ app.use(cors({
 }));
 
 
-//import cardRouter from "./routes/cardRouter";
+import cardRouter from "./routes/cardRouter";
 import topicRouter from "./routes/topicRouter";
 
-//app.use("/card", cardRouter);
+app.use("/card", cardRouter);
 app.use("/topic", topicRouter);
 
 const PORT = process.env.PORT || 5000;
