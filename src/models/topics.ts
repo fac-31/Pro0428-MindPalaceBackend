@@ -149,6 +149,25 @@ async function getSubtopicByTopicId(token: string, id: string)
     return { subtopics: data, error } as { subtopics: Tables<'subtopics'>[] | null, error: PostgrestError | null };
 }
 
+type StyledTopic = Tables<'topic_styles'> & {
+  topic?: Tables<'topics'> | null
+};
+
+async function getUserTopics(token: string) {
+  const supabase = createSupabaseClient(token);
+  const { data: { user }} = await supabase.auth.getUser();
+
+  const { data, error } = await supabase.from('topic_styles')
+    .select(`
+     *,
+      topics (*)
+      `)
+    .eq('user_id', user.id);
+
+
+
+    return { userTopics: data , error } as { userTopics: StyledTopic[] | null, error: PostgrestError | null };
+}
 
 const supabaseUrl = 'https://wkstbehsenrlwhtaqfgq.supabase.co'
 export async function getTopicsModel(req: Request, res: Response) {
@@ -164,42 +183,42 @@ export async function getTopicsModel(req: Request, res: Response) {
       
       let firstTopicID : string = "";
 
-      const { alltopics , error } = await getTopics(token);
-      for (const element of alltopics) {
-        const currentTopic = await getTopicById(token, element.id);
-        if (firstTopicID == "")
-        {
-          firstTopicID = element.id;
-        }
-        //console.log("current topic is");
-        //console.log(currentTopic.topic.title);
+      const { userTopics , error } = await getUserTopics(token);
+      // for (const element of alltopics) {
+      //   const currentTopic = await getTopicById(token, element.id);
+      //   if (firstTopicID == "")
+      //   {
+      //     firstTopicID = element.id;
+      //   }
+      //   //console.log("current topic is");
+      //   //console.log(currentTopic.topic.title);
 
-        const newSubtopicTitle = "third_subtopic";
-        const design = "design";
-        const colour = "colour";
+      //   const newSubtopicTitle = "third_subtopic";
+      //   const design = "design";
+      //   const colour = "colour";
 
-        //note creation will fail if subtopic of the same name already exists for this user.
-        const newSubtopic = await createNewSubtopic(token, 
-          newSubtopicTitle, 
-          currentTopic.topic.id,
-          design,
-          colour);
+      //   //note creation will fail if subtopic of the same name already exists for this user.
+      //   const newSubtopic = await createNewSubtopic(token, 
+      //     newSubtopicTitle, 
+      //     currentTopic.topic.id,
+      //     design,
+      //     colour);
 
-      }
+      //}
 
-      const { subtopics , error : subtopic_error } = await getSubtopicByTopicId(token,firstTopicID);
-      for (const element of subtopics) {
-          console.log(`subtopic ${element.id}`);
-          console.log(element.title);
-      }
+      // const { subtopics , error : subtopic_error } = await getSubtopicByTopicId(token,firstTopicID);
+      // for (const element of subtopics) {
+      //     console.log(`subtopic ${element.id}`);
+      //     console.log(element.title);
+      // }
 
       
       if (error) {
         console.error(error);
         return res.status(400).json({ error: error.message });
       }
-  
-      return res.status(200).json();
+
+      return res.status(200).json(userTopics);
     } catch (error: any) {
       console.error('Unhandled error in getTopicsModel:', error);
       return res.status(500).json({ error: 'Internal server error' });
