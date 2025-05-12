@@ -166,33 +166,33 @@ export async function getTopicsModel(req: Request, res: Response) {
       let firstTopicID : string = "";
 
       const { alltopics , error } = await getTopics(token);
-      for (const element of alltopics) {
-        const currentTopic = await getTopicById(token, element.id);
-        if (firstTopicID == "")
-        {
-          firstTopicID = element.id;
-        }
-        //console.log("current topic is");
-        //console.log(currentTopic.topic.title);
+      // for (const element of alltopics) {
+      //   const currentTopic = await getTopicById(token, element.id);
+      //   if (firstTopicID == "")
+      //   {
+      //     firstTopicID = element.id;
+      //   }
+      //   //console.log("current topic is");
+      //   //console.log(currentTopic.topic.title);
 
-        const newSubtopicTitle = "third_subtopic";
-        const design = "design";
-        const colour = "colour";
+      //   const newSubtopicTitle = "third_subtopic";
+      //   const design = "design";
+      //   const colour = "colour";
 
-        //note creation will fail if subtopic of the same name already exists for this user.
-        const newSubtopic = await createNewSubtopic(token, 
-          newSubtopicTitle, 
-          currentTopic.topic.id,
-          design,
-          colour);
+      //   //note creation will fail if subtopic of the same name already exists for this user.
+      //   const newSubtopic = await createNewSubtopic(token, 
+      //     newSubtopicTitle, 
+      //     currentTopic.topic.id,
+      //     design,
+      //     colour);
 
-      }
+      // }
 
-      const { subtopics , error : subtopic_error } = await getSubtopicByTopicId(token,firstTopicID);
-      for (const element of subtopics) {
-          console.log(`subtopic ${element.id}`);
-          console.log(element.title);
-      }
+      // const { subtopics , error : subtopic_error } = await getSubtopicByTopicId(token,firstTopicID);
+      // for (const element of subtopics) {
+      //     console.log(`subtopic ${element.id}`);
+      //     console.log(element.title);
+      // }
 
       
       if (error) {
@@ -200,7 +200,7 @@ export async function getTopicsModel(req: Request, res: Response) {
         return res.status(400).json({ error: error.message });
       }
   
-      return res.status(200).json();
+      return res.status(200).json(alltopics);
     } catch (error: any) {
       console.error('Unhandled error in getTopicsModel:', error);
       return res.status(500).json({ error: 'Internal server error' });
