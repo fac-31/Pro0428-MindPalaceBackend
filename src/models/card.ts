@@ -1,10 +1,10 @@
 import { string, z } from "zod";
 
 import { Request, Response } from "express";
-import { createClient, PostgrestError } from "@supabase/supabase-js";
-import { Database, Tables, TablesInsert } from "../supabase/types/supabase";
+import {  PostgrestError } from "@supabase/supabase-js";
+import {  Tables, TablesInsert } from "../supabase/types/supabase";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
-import { createSupabaseClient} from './topics';
+import { createSupabaseClient } from "../supabase/client";
 import openai from "../config/openai";
 
 async function insertMultipleSelectionCardAnswers(token: string, card_id: string, correct_index: number, options : string[]) {

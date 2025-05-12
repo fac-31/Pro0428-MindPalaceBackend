@@ -1,17 +1,10 @@
 
 import { Request, Response } from "express";
-import { createClient, PostgrestError } from "@supabase/supabase-js";
-import { Database, Tables, TablesInsert } from "../supabase/types/supabase";
+import {  PostgrestError } from "@supabase/supabase-js";
+import {  Tables, TablesInsert } from "../supabase/types/supabase";
+import { createSupabaseClient } from "../supabase/client";
 
-export function createSupabaseClient(token: string) {
-  return createClient<Database>(supabaseUrl, process.env.SUPABASE_ANON_KEY, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  });
-}
+
 async function insertSubtopic(token: string, title: string, topicId : string, design: string, colour : string) {
   const supabase = createSupabaseClient(token);
   
@@ -150,7 +143,6 @@ async function getSubtopicByTopicId(token: string, id: string)
 }
 
 
-const supabaseUrl = 'https://wkstbehsenrlwhtaqfgq.supabase.co'
 export async function getTopicsModel(req: Request, res: Response) {
   
   console.log("entered topic model");
