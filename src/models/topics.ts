@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import { createClient, PostgrestError } from "@supabase/supabase-js";
 import { Database, Tables, TablesInsert } from "../supabase/types/supabase";
+import { QueryResult, QueryData, QueryError } from '@supabase/supabase-js'
 
 function createSupabaseClient(token: string) {
   return createClient<Database>(supabaseUrl, process.env.SUPABASE_ANON_KEY, {
@@ -149,24 +150,31 @@ async function getSubtopicByTopicId(token: string, id: string)
     return { subtopics: data, error } as { subtopics: Tables<'subtopics'>[] | null, error: PostgrestError | null };
 }
 
-type StyledTopic = Tables<'topic_styles'> & {
-  topic?: Tables<'topics'> | null
-};
 
 async function getUserTopics(token: string) {
   const supabase = createSupabaseClient(token);
   const { data: { user }} = await supabase.auth.getUser();
 
-  const { data, error } = await supabase.from('topic_styles')
-    .select(`
-     *,
-      topics (*)
-      `)
-    .eq('user_id', user.id);
+  // const { data, error } = await supabase.from('topic_styles')
+  //   .select(`
+  //     *,
+  //     topic: topics (*)
+  //   `)
+  //   .eq('user_id', user.id);
 
 
+  const userTopicsQuery = supabase.from('topic_styles').select(`
+    *,
+    topics (*)
+  `)
+  type UserTopics = QueryData<typeof userTopicsQuery>
 
-    return { userTopics: data , error } as { userTopics: StyledTopic[] | null, error: PostgrestError | null };
+  
+
+  const { data, error } = await userTopicsQuery
+  if (error) throw error
+
+  return { userTopics: data , error } as { userTopics: UserTopics | null, error: PostgrestError | null };
 }
 
 const supabaseUrl = 'https://wkstbehsenrlwhtaqfgq.supabase.co'

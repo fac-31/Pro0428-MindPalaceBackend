@@ -1,9 +1,9 @@
 import express from "express";
 const router = express.Router();
 
-import { getTopics } from "../controllers/topicController";
+import { getUserTopics } from "../controllers/topicController";
 
-router.get("/", getTopics);
+router.get("/", getUserTopics);
 
 
 export default router;
