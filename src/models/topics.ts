@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { createClient, PostgrestError } from "@supabase/supabase-js";
 import { Database, Tables, TablesInsert } from "../supabase/types/supabase";
 
-function createSupabaseClient(token: string) {
+export function createSupabaseClient(token: string) {
   return createClient<Database>(supabaseUrl, process.env.SUPABASE_ANON_KEY, {
     global: {
       headers: {
@@ -153,6 +153,7 @@ async function getSubtopicByTopicId(token: string, id: string)
 const supabaseUrl = 'https://wkstbehsenrlwhtaqfgq.supabase.co'
 export async function getTopicsModel(req: Request, res: Response) {
   
+  console.log("entered topic model");
     try {
       const token = req.headers.authorization?.split(' ')[1];
       if (!token) {
