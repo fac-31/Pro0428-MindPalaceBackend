@@ -8,12 +8,14 @@ export const generateCards = async (req: Request, res: Response): Promise<void> 
     const topicTitle :string = req.body.topic;
     const subtopicTitle : string = req.body.subtopic;
 
+    console.log("entered generateCards Controller");
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
         res.status(401).json({ error: "Unauthorized: no token provided" });
     }
 
     const { topic , error : topicError } = await getTopicByTitle(token, topicTitle);
+    console.log("got topic by Title");
 
      if (topicError) {
         console.error(topicError);
@@ -21,6 +23,7 @@ export const generateCards = async (req: Request, res: Response): Promise<void> 
       }
   
     const { subtopic  , error: subTopicError } = await getSubtopicByTopicIdAndSubtopicTitle(token, topic.id, subtopicTitle);
+    console.log("got subtopic by Title");
 
      if (subTopicError) {
         console.error(subTopicError);
@@ -28,7 +31,9 @@ export const generateCards = async (req: Request, res: Response): Promise<void> 
       }
 
     const cards = await generateCardsModel();
-    insertGeneratedCards(req, res, cards);
+    console.log("generated cards");
+
+    insertGeneratedCards(token, cards, topic, subtopic);
 
     res.status(200).json({ message : cards})
   } catch (error) {

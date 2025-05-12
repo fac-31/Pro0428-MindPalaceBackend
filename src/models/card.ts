@@ -1,6 +1,5 @@
 import { string, z } from "zod";
 
-import { Request, Response } from "express";
 import {  PostgrestError } from "@supabase/supabase-js";
 import {  Tables, TablesInsert } from "../supabase/types/supabase";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
@@ -46,18 +45,24 @@ const { data, error } = await supabase
 async function insertCard(token: string, question: string, answer_type: string, subtopic_id : string) {
   const supabase = createSupabaseClient(token);
   
-  const newCard: TablesInsert<'cards'> =  {
-    answer_type,
+  const level : number = 1;
+  const newCard: TablesInsert<'cards'> = {
     question,
-    subtopic_id
-};
-
+    answer_type,
+    subtopic_id,
+    level
+  };
 const { data, error } = await supabase
     .from('cards')
     .insert(newCard)
     .select()
     .single();
-    
+  
+    if (error) {
+    console.error('Insert error:', error);
+    throw new Error(`Failed to insert card: ${error.message}`);
+  }
+
   return { data, error } as { data: Tables<'cards'> | null, error: PostgrestError | null };
 }
 
@@ -142,18 +147,12 @@ catch (error) {
 }
 }
 
-export async function insertGeneratedCards(req: Request, res: Response,  cards: z.infer<typeof MultipleChoiceCardsSchema>) 
+export async function insertGeneratedCards(token: string,  cards: z.infer<typeof MultipleChoiceCardsSchema>, topic :  Tables<'topics'> , subtopic : Tables<'subtopics'> ) 
 {
-
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized: no token provided" });
-    }
-
 
   for (const card of cards.cards) 
   {
-    const { data: cardData, error: cardError } = await insertCard(token, card.question, "select", card.topic);
+    const { data: cardData, error: cardError } = await insertCard(token, card.question, "select", subtopic.id);
 
     if (cardError || !cardData) {
       console.error("Failed to insert card:", cardError);
