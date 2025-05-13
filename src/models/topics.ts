@@ -1,18 +1,11 @@
 
 import { Request, Response } from "express";
-import { createClient, PostgrestError } from "@supabase/supabase-js";
-import { Database, Tables, TablesInsert } from "../supabase/types/supabase";
+import {  PostgrestError } from "@supabase/supabase-js";
+import {  Tables, TablesInsert } from "../supabase/types/supabase";
+import { createSupabaseClient } from "../supabase/client";
 
-function createSupabaseClient(token: string) {
-  return createClient<Database>(supabaseUrl, process.env.SUPABASE_ANON_KEY, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  });
-}
-async function insertSubtopic(token: string, title: string, topicId : string, design: string, colour : string) {
+
+export async function insertSubtopic(token: string, title: string, topicId : string, design: string, colour : string) {
   const supabase = createSupabaseClient(token);
   
   const { data: { user } } = await supabase.auth.getUser();
@@ -34,7 +27,7 @@ const { data, error } = await supabase
   return { data, error } as { data: Tables<'subtopics'> | null, error: PostgrestError | null };
 }
 
-async function insertTopic(token: string, title: string) {
+export async function insertTopic(token: string, title: string) {
   const supabase = createSupabaseClient(token);
   
   const newTopic: TablesInsert<'topics'> = {
@@ -51,7 +44,7 @@ async function insertTopic(token: string, title: string) {
   return { data, error } as { data: Tables<'topics'> | null, error: PostgrestError | null };
 }
 
-async function createNewTopic(token: string, title: string) {
+export async function createNewTopic(token: string, title: string) {
   try {
     // Validate input
     if (!title.trim()) {
@@ -80,7 +73,7 @@ async function createNewTopic(token: string, title: string) {
   }
 }
 
-async function createNewSubtopic(token: string, title: string, topicId : string, design: string, colour : string) {
+export async function createNewSubtopic(token: string, title: string, topicId : string, design: string, colour : string) {
   try {
     // Validate input
     if (!title.trim()) {
@@ -109,9 +102,7 @@ async function createNewSubtopic(token: string, title: string, topicId : string,
   }
 }
 
-
-
-async function getTopics(token: string) 
+export async function getTopics(token: string) 
 {
   const supabase = createSupabaseClient(token);
   const { data, error } = await supabase
@@ -121,7 +112,7 @@ async function getTopics(token: string)
     return { alltopics: data , error } as { alltopics: Tables<'topics'>[] | null, error: PostgrestError | null };
 }
 
-async function getTopicById(token: string, id: string) 
+export async function getTopicById(token: string, id: string) 
 {
   const supabase = createSupabaseClient(token);
   const { data, error } = await supabase
@@ -134,7 +125,20 @@ async function getTopicById(token: string, id: string)
   }
 
   
-async function getSubtopicByTopicId(token: string, id: string) 
+export async function getTopicByTitle(token: string, title: string) 
+{
+  const supabase = createSupabaseClient(token);
+  const { data, error } = await supabase
+    .from('topics')
+    .select('*')
+    .eq('title', title)
+    .single();
+    
+    return {  topic: data, error } as { topic : Tables<'topics'> | null, error: PostgrestError | null };
+  }
+
+
+export async function getSubtopicByTopicId(token: string, id: string) 
 {
   const supabase = createSupabaseClient(token);
   const { data: { user } } = await supabase.auth.getUser();
@@ -150,9 +154,27 @@ async function getSubtopicByTopicId(token: string, id: string)
 }
 
 
-const supabaseUrl = 'https://wkstbehsenrlwhtaqfgq.supabase.co'
+export async function getSubtopicByTopicIdAndSubtopicTitle(token: string, topic_id: string, subtopic_title : string) 
+{
+  const supabase = createSupabaseClient(token);
+  const { data: { user } } = await supabase.auth.getUser();
+
+
+  const { data, error } = await supabase
+    .from('subtopics')
+    .select('*')
+    .eq('topic_id', topic_id)
+    .eq('title', subtopic_title)
+    .eq('user_id', user.id)
+    .single();
+    
+    return { subtopic: data, error } as { subtopic: Tables<'subtopics'> | null, error: PostgrestError | null };
+}
+
+
 export async function getTopicsModel(req: Request, res: Response) {
   
+  console.log("entered topic model");
     try {
       const token = req.headers.authorization?.split(' ')[1];
       if (!token) {
@@ -165,33 +187,33 @@ export async function getTopicsModel(req: Request, res: Response) {
       let firstTopicID : string = "";
 
       const { alltopics , error } = await getTopics(token);
-      for (const element of alltopics) {
-        const currentTopic = await getTopicById(token, element.id);
-        if (firstTopicID == "")
-        {
-          firstTopicID = element.id;
-        }
-        //console.log("current topic is");
-        //console.log(currentTopic.topic.title);
+      // for (const element of alltopics) {
+      //   const currentTopic = await getTopicById(token, element.id);
+      //   if (firstTopicID == "")
+      //   {
+      //     firstTopicID = element.id;
+      //   }
+      //   //console.log("current topic is");
+      //   //console.log(currentTopic.topic.title);
 
-        const newSubtopicTitle = "third_subtopic";
-        const design = "design";
-        const colour = "colour";
+      //   const newSubtopicTitle = "third_subtopic";
+      //   const design = "design";
+      //   const colour = "colour";
 
-        //note creation will fail if subtopic of the same name already exists for this user.
-        const newSubtopic = await createNewSubtopic(token, 
-          newSubtopicTitle, 
-          currentTopic.topic.id,
-          design,
-          colour);
+      //   //note creation will fail if subtopic of the same name already exists for this user.
+      //   const newSubtopic = await createNewSubtopic(token, 
+      //     newSubtopicTitle, 
+      //     currentTopic.topic.id,
+      //     design,
+      //     colour);
 
-      }
+      // }
 
-      const { subtopics , error : subtopic_error } = await getSubtopicByTopicId(token,firstTopicID);
-      for (const element of subtopics) {
-          console.log(`subtopic ${element.id}`);
-          console.log(element.title);
-      }
+      // const { subtopics , error : subtopic_error } = await getSubtopicByTopicId(token,firstTopicID);
+      // for (const element of subtopics) {
+      //     console.log(`subtopic ${element.id}`);
+      //     console.log(element.title);
+      // }
 
       
       if (error) {
@@ -199,7 +221,7 @@ export async function getTopicsModel(req: Request, res: Response) {
         return res.status(400).json({ error: error.message });
       }
   
-      return res.status(200).json();
+      return res.status(200).json(alltopics);
     } catch (error: any) {
       console.error('Unhandled error in getTopicsModel:', error);
       return res.status(500).json({ error: 'Internal server error' });
