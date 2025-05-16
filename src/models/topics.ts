@@ -174,6 +174,7 @@ export async function getTopics(token: string) {
     };
 }
 
+
 export async function getTopicById(token: string, id: string) {
     const supabase = createSupabaseClient(token);
     const { data, error } = await supabase
