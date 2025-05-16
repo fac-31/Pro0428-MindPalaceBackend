@@ -1,69 +1,91 @@
 import { string, z } from "zod";
 
-import {  PostgrestError } from "@supabase/supabase-js";
-import {  Tables, TablesInsert } from "../supabase/types/supabase";
+import { PostgrestError } from "@supabase/supabase-js";
+import { Tables, TablesInsert } from "../supabase/types/supabase";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { createSupabaseClient } from "../supabase/client";
 import openai from "../config/openai";
 
-async function insertMultipleSelectionCardAnswers(token: string, card_id: string, correct_index: number, options : string[]) {
-  const supabase = createSupabaseClient(token);
-  
-  const newSelectAnswers: TablesInsert<'select_answers'> =  {
-    card_id,
-    correct_index,
-    options
+async function insertMultipleSelectionCardAnswers(
+    token: string,
+    card_id: string,
+    correct_index: number,
+    options: string[],
+) {
+    const supabase = createSupabaseClient(token);
+
+    const newSelectAnswers: TablesInsert<"select_answers"> = {
+        card_id,
+        correct_index,
+        options,
+    };
+
+    const { data, error } = await supabase
+        .from("select_answers")
+        .insert(newSelectAnswers)
+        .select()
+        .single();
+
+    return { data, error } as {
+        data: Tables<"select_answers"> | null;
+        error: PostgrestError | null;
+    };
 }
 
-const { data, error } = await supabase
-    .from('select_answers')
-    .insert(newSelectAnswers)
-    .select()
-    .single();
-    
-  return { data, error } as { data: Tables<'select_answers'> | null, error: PostgrestError | null };
+async function insertFreeTextCardAnswers(
+    token: string,
+    card_id: string,
+    correct_answer: string,
+) {
+    const supabase = createSupabaseClient(token);
+
+    const newFreeTextAnswer: TablesInsert<"free_text_answers"> = {
+        card_id,
+        correct_answer,
+    };
+
+    const { data, error } = await supabase
+        .from("free_text_answers")
+        .insert(newFreeTextAnswer)
+        .select()
+        .single();
+
+    return { data, error } as {
+        data: Tables<"free_text_answers"> | null;
+        error: PostgrestError | null;
+    };
 }
 
+async function insertCard(
+    token: string,
+    question: string,
+    answer_type: string,
+    subtopic_id: string,
+) {
+    const supabase = createSupabaseClient(token);
 
-async function insertFreeTextCardAnswers(token: string, card_id: string, correct_answer: string) {
-  const supabase = createSupabaseClient(token);
-  
-  const newFreeTextAnswer: TablesInsert<'free_text_answers'> =  {
-    card_id,
-    correct_answer
-}
+    const level: number = 1;
+    const newCard: TablesInsert<"cards"> = {
+        question,
+        answer_type,
+        subtopic_id,
+        level,
+    };
+    const { data, error } = await supabase
+        .from("cards")
+        .insert(newCard)
+        .select()
+        .single();
 
-const { data, error } = await supabase
-    .from('free_text_answers')
-    .insert(newFreeTextAnswer)
-    .select()
-    .single();
-    
-  return { data, error } as { data: Tables<'free_text_answers'> | null, error: PostgrestError | null };
-}
-
-async function insertCard(token: string, question: string, answer_type: string, subtopic_id : string) {
-  const supabase = createSupabaseClient(token);
-  
-  const level : number = 1;
-  const newCard: TablesInsert<'cards'> = {
-    question,
-    answer_type,
-    subtopic_id,
-    level
-  };
-const { data, error } = await supabase
-    .from('cards')
-    .insert(newCard)
-    .select()
-    .single();
-  
     if (error) {
-    console.error('Insert error:', error);
-    throw new Error(`Failed to insert card: ${error.message}`);
-  }
+        console.error("Insert error:", error);
+        throw new Error(`Failed to insert card: ${error.message}`);
+    }
 
-  return { data, error } as { data: Tables<'cards'> | null, error: PostgrestError | null };
+    return { data, error } as {
+        data: Tables<"cards"> | null;
+        error: PostgrestError | null;
+    };
 }
 
 // 1) Define your Zod schemas
@@ -88,24 +110,23 @@ const MultipleChoiceCardSchema = z.object({
 
 const MultipleChoiceCardSchema = z.object({
     question: z.string(),
-    topic:    z.string(),
-    options:  z.array(z.string()),
-    correctAnswerIndex: z.number().int()
-  });
+    topic: z.string(),
+    options: z.array(z.string()),
+    correctAnswerIndex: z.number().int(),
+});
 
-export const MultipleChoiceCardsSchema = z.object({ cards: z.array(MultipleChoiceCardSchema) });
-
+export const MultipleChoiceCardsSchema = z.object({
+    cards: z.array(MultipleChoiceCardSchema),
+});
 
 export async function generateCardsModel() {
     try {
-
-    
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      {
-        role: "system",
-        content: `
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "system",
+                    content: `
 You are a quiz generator model. Generate exactly 3 MultipleChoiceCard objects.
 Each card must match this TypeScript interface:
 
@@ -118,58 +139,72 @@ interface MultipleChoiceCard {
         the options is an array of 4 possible answers. correctAnswerIndex specifies the correct answer index.
 
 `.trim(),
-      },
-      {
-        role: "user",
-        content: "Generate cards that test my knowledge on driving theory.",
-      },
-    ],
-    // 2) Wire up the JSON-Schema you got from Zod:
-    response_format:zodResponseFormat(MultipleChoiceCardsSchema, "cards"),
-  });
+                },
+                {
+                    role: "user",
+                    content:
+                        "Generate cards that test my knowledge on driving theory.",
+                },
+            ],
+            // 2) Wire up the JSON-Schema you got from Zod:
+            response_format: zodResponseFormat(
+                MultipleChoiceCardsSchema,
+                "cards",
+            ),
+        });
 
-  // 1. Grab the JSON‐string from .content
-  const raw = response.choices[0].message.content;
-  if (!raw) throw new Error("No content returned");
+        // 1. Grab the JSON‐string from .content
+        const raw = response.choices[0].message.content;
+        if (!raw) throw new Error("No content returned");
 
-  const result = MultipleChoiceCardsSchema.safeParse(JSON.parse(raw));
+        const result = MultipleChoiceCardsSchema.safeParse(JSON.parse(raw));
 
-  if (!result.success) {
-    console.error("Validation failed:", result.error);
-    throw new Error("Invalid response format from OpenAI.");
-  }
+        if (!result.success) {
+            console.error("Validation failed:", result.error);
+            throw new Error("Invalid response format from OpenAI.");
+        }
 
-  return result.data;
-}
-catch (error) {
-    console.log(error.error);
-    throw error;
-}
-}
-
-export async function insertGeneratedCards(token: string,  cards: z.infer<typeof MultipleChoiceCardsSchema>, topic :  Tables<'topics'> , subtopic : Tables<'subtopics'> ) 
-{
-
-  for (const card of cards.cards) 
-  {
-    const { data: cardData, error: cardError } = await insertCard(token, card.question, "select", subtopic.id);
-
-    if (cardError || !cardData) {
-      console.error("Failed to insert card:", cardError);
-      continue;
+        return result.data;
+    } catch (error) {
+        console.log(error.error);
+        throw error;
     }
+}
 
-    const card_id = cardData.id;
+export async function insertGeneratedCards(
+    token: string,
+    cards: z.infer<typeof MultipleChoiceCardsSchema>,
+    topic: Tables<"topics">,
+    subtopic: Tables<"subtopics">,
+) {
+    for (const card of cards.cards) {
+        const { data: cardData, error: cardError } = await insertCard(
+            token,
+            card.question,
+            "select",
+            subtopic.id,
+        );
 
-    const { error: answerError } = await insertMultipleSelectionCardAnswers(
-      token,
-      card_id,
-      card.correctAnswerIndex,
-      card.options
-    );
+        if (cardError || !cardData) {
+            console.error("Failed to insert card:", cardError);
+            continue;
+        }
 
-    if (answerError) {
-      console.error("Failed to insert answer for card:", card_id, answerError);
+        const card_id = cardData.id;
+
+        const { error: answerError } = await insertMultipleSelectionCardAnswers(
+            token,
+            card_id,
+            card.correctAnswerIndex,
+            card.options,
+        );
+
+        if (answerError) {
+            console.error(
+                "Failed to insert answer for card:",
+                card_id,
+                answerError,
+            );
+        }
     }
-  }
 }
