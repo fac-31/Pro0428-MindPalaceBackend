@@ -128,6 +128,10 @@ export async function createNewSubtopic(
     design: string,
     colour: string,
 ) {
+
+    console.log(token);
+    console.log(title);
+    console.log(topicId);
     try {
         // Validate input
         if (!title.trim()) {
@@ -173,6 +177,7 @@ export async function getTopics(token: string) {
         error: PostgrestError | null;
     };
 }
+
 
 export async function getTopicById(token: string, id: string) {
     const supabase = createSupabaseClient(token);
