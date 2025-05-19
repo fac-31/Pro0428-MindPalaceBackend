@@ -209,39 +209,6 @@ export async function insertGeneratedCards(
     }
 }
 
-function cosineSimilarity(vec1, vec2) 
-{
-    const dotProduct = vec1.reduce((sum, val, i) => sum + val * vec2[i], 0);
-    const norm1 = Math.sqrt(vec1.reduce((sum, val) => sum + val * val, 0));
-    const norm2 = Math.sqrt(vec2.reduce((sum, val) => sum + val * val, 0));
-    return dotProduct / (norm1 * norm2);
-}
-
-//this function returns true when the cosine similarity between to sentences is greater or equal
-//to the similarity threshold.
-export async function IsUserAnswerSameAsGroundTruth(userAnswer : string, groundTruth : string,  similarityThreshold : number)
-{
-    await fetch("https://api.cohere.ai/v1/embed", {
-    method: "POST",
-    headers: {
-        "Authorization": `Bearer ${process.env.COHERE_KEY}`,
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        texts: [userAnswer, groundTruth],
-        model: "embed-english-v3.0"
-    })
-    })
-    .then(res => res.json())
-    .then(data => 
-    {
-        const [embedding1, embedding2] = data.embeddings;
-        const similarity = cosineSimilarity(embedding1, embedding2);
-        console.log("Cosine Similarity:", similarity);
-        return (similarity >= similarityThreshold)
-    })
-    .catch(err => console.error("Cohere API Error:", err));
-}
 
 export async function getSelectCardAnswerByCardId(token: string, card_id: string) {
     const supabase = createSupabaseClient(token);
@@ -258,6 +225,7 @@ export async function getSelectCardAnswerByCardId(token: string, card_id: string
 }
 
 export async function getFreeCardAnswerByCardId(token: string, card_id: string) {
+    
     const supabase = createSupabaseClient(token);
     const { data, error } = await supabase
         .from("free_text_answers")

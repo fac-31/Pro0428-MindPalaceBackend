@@ -1,0 +1,9 @@
+POST http://localhost:5000/card/cardFreeTextAnswer
+Content-Type: application/json
+Authorization: Bearer YOUR_AUTH_TOKEN_HERE
+
+//free text answer
+{
+  "card_id": "5429c644-745e-4f7f-9f6d-3a23fd14aec1",
+  "user_answer": "they are predictable"
+}

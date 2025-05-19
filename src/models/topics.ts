@@ -129,9 +129,6 @@ export async function createNewSubtopic(
     colour: string,
 ) {
 
-    console.log(token);
-    console.log(title);
-    console.log(topicId);
     try {
         // Validate input
         if (!title.trim()) {
@@ -276,7 +273,6 @@ export async function getSubtopicByTopicIdAndSubtopicTitle(
 }
 
 export async function getTopicsModel(req: Request, res: Response) {
-    console.log("entered topic model");
     try {
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {

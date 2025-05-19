@@ -1,0 +1,8 @@
+POST http://localhost:5000/card/cardSelectAnswer
+Content-Type: application/json
+Authorization: Bearer YOUR_AUTH_TOKEN_HERE
+
+{
+  "card_id": "6d1bc126-9474-4f25-b358-8a2202ed984d",
+  "user_answer": 2  //the correct index to this answer is 2
+}

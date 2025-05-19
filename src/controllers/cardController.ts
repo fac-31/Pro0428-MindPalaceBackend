@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { generateCardsModel, insertGeneratedCards, getFreeCardAnswerByCardId, IsUserAnswerSameAsGroundTruth, getSelectCardAnswerByCardId} from "../models/card";
+import { generateCardsModel, insertGeneratedCards, getFreeCardAnswerByCardId,getSelectCardAnswerByCardId} from "../models/card";
 import {
     getTopicByTitle,
     getSubtopicByTopicIdAndSubtopicTitle,
@@ -13,7 +13,6 @@ export const generateCards = async (
         const topicTitle: string = req.body.topic;
         const subtopicTitle: string = req.body.subtopic;
 
-        console.log("entered generateCards Controller");
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
             res.status(401).json({ error: "Unauthorized: no token provided" });
@@ -23,7 +22,6 @@ export const generateCards = async (
             token,
             topicTitle,
         );
-        console.log("got topic by Title");
 
         if (topicError) {
             console.error(topicError);
@@ -36,7 +34,6 @@ export const generateCards = async (
                 topic.id,
                 subtopicTitle,
             );
-        console.log("got subtopic by Title");
 
         if (subTopicError) {
             console.error(subTopicError);
@@ -44,8 +41,6 @@ export const generateCards = async (
         }
 
         const cards = await generateCardsModel();
-        console.log("generated cards");
-
         insertGeneratedCards(token, cards, topic, subtopic);
 
         res.status(200).json({ message: cards });
@@ -62,7 +57,6 @@ export const cardFreeTextAnswer = async (
     try {
         const card_id: string = req.body.card_id;
         const card_free_user_answer: string = req.body.user_answer;
-
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
             res.status(401).json({ error: "Unauthorized: no token provided" });
@@ -79,10 +73,13 @@ export const cardFreeTextAnswer = async (
             res.status(400).json({ error: cardError.message });
         }
 
-        //compare stored answer with user's answer
-        const similarityThreshold = 0.7;
-        const identical = IsUserAnswerSameAsGroundTruth(card_free_user_answer, answer.correct_answer,  similarityThreshold)
+        //TDDO : call openAI reasoning model here and compare
+        // card_free_user_answer
+        // with
+        // answer.correct_answer
+        throw new Error("not implemented");
 
+        const identical = true;
         res.status(200).json(
             { identical,
               correct_answer : answer.correct_answer
