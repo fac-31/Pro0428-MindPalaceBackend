@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import { generateCardsModel, insertGeneratedCards } from "../models/card";
-import {
-    getTopicByTitle,
-    getSubtopicByTopicIdAndSubtopicTitle,
-} from "../models/topics";
+import { getTopicByTitle } from "../models/topics";
+import { getSubtopicByTopicIdAndSubtopicTitle } from "../models/subtopics";
 
 export const generateCards = async (
     req: Request,

@@ -1,11 +1,9 @@
 import express from "express";
 const router = express.Router();
 
-import { getUserTopics, addUserTopic, getSubtopics , addSubtopic} from "../controllers/topicController";
+import { getTopics, addUserTopic } from "../controllers/topicController";
 
-router.get("/", getUserTopics);
+router.get("/", getTopics);
 router.post("/", addUserTopic);
-router.get("/subtopic", getSubtopics);
-router.post("/subtopic", addSubtopic);
 
 export default router;
