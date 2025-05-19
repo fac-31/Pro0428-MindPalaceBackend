@@ -117,7 +117,7 @@ export const cardSelectAnswer = async (
         }
 
         //compare stored answer with user's answer
-        const identical = (card_select_user_answer == answer.correct_index);
+        const identical = (card_select_user_answer === answer.correct_index);
 
         res.status(200).json(
             { identical,
