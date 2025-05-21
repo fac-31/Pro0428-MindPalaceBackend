@@ -16,9 +16,11 @@ app.use(
 
 import cardRouter from "./routes/cardRouter";
 import topicRouter from "./routes/topicRouter";
+import subtopicRouter from "./routes/subtopicRouter";
 
 app.use("/card", cardRouter);
 app.use("/topic", topicRouter);
+app.use("/subtopic", subtopicRouter);
 
 const PORT = process.env.PORT || 5000;
 

@@ -1,118 +1,28 @@
 import { Request, Response } from "express";
-import { getTopicsModel, addTopicModel, getSubtopicByTopicId, getTopicByTitle, createNewSubtopic } from "../models/topics";
+import { getUserTopics, createUserTopic } from "../models/topics";
 
-
-export const getSubtopics = async (
-    req: Request,
-    res: Response,
-): Promise<void> => {
-
+export const getTopics = async (req: Request, res: Response): Promise<void> => {
+    console.log("entered topic model");
     try {
-            const topicTitle: string = req.query.topic as string;
-    
-            console.log("entered subtopics Controller");
-            const token = req.headers.authorization?.split(" ")[1];
-            if (!token) {
-                res.status(401).json({ error: "Unauthorized: no token provided" });
-            }
-    
-            const { data: topic, error: topicError } = await getTopicByTitle(
-                token,
-                topicTitle,
-            );
-            console.log("got topic by Title");
-    
-            if (topicError) {
-                console.error(topicError);
-                res.status(400).json({ error: topicError.message });
-            }
-    
-            const { subtopics, error: subTopicError } =
-                await getSubtopicByTopicId(
-                    token,
-                    topic.id,
-                );
-    
-            if (subTopicError) {
-                console.error(subTopicError);
-                res.status(400).json({ error: subTopicError.message });
-            }
-            console.log("got subtopics");
-
-        
-            res.status(200).json(subtopics);
-        } catch (error) {
-            res.status(500).json({ error: "Internal Server Error" });
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            res.status(401).json({ error: "Unauthorized: no token provided" });
         }
 
-};
+        //and so forth... (note: if you create a topic with an existing name an error will be returned)
+        //const newTopic = await createNewTopic(token, "ninth");
 
+        const { userTopics, error } = await getUserTopics(token);
 
-export const addSubtopic = async (
-    req: Request,
-    res: Response,
-): Promise<void> => {
-
-    try {
-            const topicTitle: string = req.body.topic;
-            const subtopicTitle: string = req.body.title;
-            const design : string = req.body.design;
-            const colour : string = req.body.color;
-
-            
-            console.log("--------------------");
-            console.log(req.body);
-
-            const token = req.headers.authorization?.split(" ")[1];
-            if (!token) {
-                res.status(401).json({ error: "Unauthorized: no token provided" });
-            }
-    
-            const { data: topic, error: topicError } = await getTopicByTitle(
-                token,
-                topicTitle,
-            );
-            console.log("got topic by Title");
-    
-            if (topicError) {
-                console.error(topicError);
-                res.status(400).json({ error: topicError.message });
-            }
-    
-            const newSubtopic = await  createNewSubtopic(
-                                        token,
-                                        subtopicTitle,
-                                        topic.id,
-                                        design,
-                                        colour);
-
-            
-            //TODO - handle errors gracefully.
-            // if (subTopicError) {
-            //     console.error(subTopicError);
-            //     res.status(400).json({ error: subTopicError.message });
-            // }
-            console.log("created new subtopic");
-
-        
-            res.status(200).json(newSubtopic);
-        } catch (error) {
-            res.status(500).json({ error: "Internal Server Error" });
+        if (error) {
+            console.error(error);
+            res.status(400).json({ error: error.message });
         }
 
-};
-
-
-
-export const getUserTopics = async (
-    req: Request,
-    res: Response,
-): Promise<void> => {
-    try {
-        console.log("topic controller entered");
-        await getTopicsModel(req, res);
-    } catch (error) {
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(200).json(userTopics);
+    } catch (error: any) {
+        console.error("Unhandled error in getTopicsModel:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 };
 
@@ -120,10 +30,31 @@ export const addUserTopic = async (
     req: Request,
     res: Response,
 ): Promise<void> => {
+    console.log("entered add topic model");
     try {
-        console.log("adding user topic");
-        await addTopicModel(req, res);
-    } catch (error) {
-        res.status(500).json({ error: "Internal Server Error" });
+        // Get Auth
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            res.status(401).json({ error: "Unauthorized: no token provided" });
+        }
+
+        const { title, design, colour } = req.body;
+
+        const { data: topicData, error } = await createUserTopic(
+            token,
+            title,
+            design,
+            colour,
+        );
+
+        if (error) {
+            console.error(error);
+            res.status(400).json({ error: error.message });
+        }
+
+        res.status(200).json(topicData);
+    } catch (error: any) {
+        console.error("Unhandled error in addTopicsModel:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 };
