@@ -9,7 +9,6 @@ export const getSubtopics = async (
     try {
         const topicTitle: string = req.query.topic as string;
 
-        console.log("entered subtopics Controller");
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
             res.status(401).json({ error: "Unauthorized: no token provided" });
@@ -19,7 +18,6 @@ export const getSubtopics = async (
             token,
             topicTitle,
         );
-        console.log("got topic by Title");
 
         if (topicError) {
             console.error(topicError);
@@ -35,7 +33,6 @@ export const getSubtopics = async (
             console.error(subTopicError);
             res.status(400).json({ error: subTopicError.message });
         }
-        console.log("got subtopics");
 
         res.status(200).json(subtopics);
     } catch (error) {
@@ -53,9 +50,6 @@ export const addSubtopic = async (
         const design: string = req.body.design;
         const colour: string = req.body.color;
 
-        console.log("--------------------");
-        console.log(req.body);
-
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
             res.status(401).json({ error: "Unauthorized: no token provided" });
@@ -65,7 +59,6 @@ export const addSubtopic = async (
             token,
             topicTitle,
         );
-        console.log("got topic by Title");
 
         if (topicError) {
             console.error(topicError);
@@ -85,7 +78,6 @@ export const addSubtopic = async (
         //     console.error(subTopicError);
         //     res.status(400).json({ error: subTopicError.message });
         // }
-        console.log("created new subtopic");
 
         res.status(200).json(newSubtopic);
     } catch (error) {

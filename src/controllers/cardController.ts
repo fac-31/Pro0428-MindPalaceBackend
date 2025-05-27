@@ -54,8 +54,8 @@ export const getCards = async (
     res: Response,
 ): Promise<void> => {
     try {
-        const topicTitle: string = req.body.topic;
-        const subtopicTitle: string = req.body.subtopic;
+        const topicTitle: string = req.query.topic as string;
+        const subtopicTitle: string = req.query.subtopic as string;
 
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
