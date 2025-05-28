@@ -8,8 +8,8 @@ export const generateCards = async (
     res: Response,
 ): Promise<void> => {
     try {
-        const topicTitle: string = req.body.topic;
-        const subtopicTitle: string = req.body.subtopic;
+        const topicTitle: string = decodeURIComponent(req.body.topic);
+        const subtopicTitle: string = decodeURIComponent(req.body.subtopic);
 
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
@@ -38,11 +38,10 @@ export const generateCards = async (
             res.status(400).json({ error: subTopicError.message });
         }
 
-        const cards = await generateCardsModel();
-
+        const cards = await generateCardsModel(topic.title, subtopic.title);
         insertGeneratedCards(token, cards, topic, subtopic);
 
-        res.status(200).json({ message: cards });
+        res.status(200).json(cards);
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
     }
@@ -54,8 +53,8 @@ export const getCards = async (
     res: Response,
 ): Promise<void> => {
     try {
-        const topicTitle: string = req.query.topic as string;
-        const subtopicTitle: string = req.query.subtopic as string;
+        const topicTitle: string = decodeURIComponent(req.query.topic as string);
+        const subtopicTitle: string = decodeURIComponent(req.query.subtopic as string);
 
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
@@ -75,6 +74,8 @@ export const getCards = async (
         const cards = await getCardsModel(token, topic.id, subtopicTitle);
         const cardsWithAnswers = await getAnswers(token, cards);
         
+        console.log("answers");
+        console.log(cardsWithAnswers);
         res.status(200).json(cardsWithAnswers);
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });

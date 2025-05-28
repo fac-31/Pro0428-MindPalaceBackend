@@ -7,7 +7,7 @@ export const getSubtopics = async (
     res: Response,
 ): Promise<void> => {
     try {
-        const topicTitle: string = req.query.topic as string;
+        const topicTitle: string = decodeURIComponent(req.query.topic as string);
 
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
@@ -45,10 +45,11 @@ export const addSubtopic = async (
     res: Response,
 ): Promise<void> => {
     try {
-        const topicTitle: string = req.body.topic;
-        const subtopicTitle: string = req.body.title;
-        const design: string = req.body.design;
-        const colour: string = req.body.color;
+        
+        const topicTitle: string = decodeURIComponent(req.body.topicTitle);
+        const subtopicTitle: string = decodeURIComponent(req.body.title);
+        const design: string = decodeURIComponent(req.body.design);
+        const colour: string = decodeURIComponent(req.body.color);
 
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {

@@ -124,7 +124,7 @@ export const MultipleChoiceCardsSchema = z.object({
     cards: z.array(MultipleChoiceCardSchema),
 });
 
-export async function generateCardsModel() {
+export async function generateCardsModel(topic : string, subtopic : string) {
     try {
         const response = await openai.chat.completions.create({
             model: "gpt-4o",
@@ -132,7 +132,7 @@ export async function generateCardsModel() {
                 {
                     role: "system",
                     content: `
-You are a quiz generator model. Generate exactly 3 MultipleChoiceCard objects.
+You are a quiz generator model. Generate exactly 10 MultipleChoiceCard objects.
 Each card must match this TypeScript interface:
 
 interface MultipleChoiceCard {
@@ -148,7 +148,7 @@ interface MultipleChoiceCard {
                 {
                     role: "user",
                     content:
-                        "Generate cards that test my knowledge on driving theory.",
+                        `Generate cards that test my knowledge on the topic of ${topic} in the specific sub-topic of ${subtopic}.`,
                 },
             ],
             // 2) Wire up the JSON-Schema you got from Zod:
