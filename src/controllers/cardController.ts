@@ -39,9 +39,8 @@ export const generateCards = async (
         }
 
         const cards = await generateCardsModel(topic.title, subtopic.title);
-        insertGeneratedCards(token, cards, topic, subtopic);
-
-        res.status(200).json(cards.cards);
+        const cardsWithAnswers = await insertGeneratedCards(token, cards, topic, subtopic);
+        res.status(200).json(cardsWithAnswers);
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
     }

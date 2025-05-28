@@ -181,8 +181,13 @@ export async function insertGeneratedCards(
     cards: z.infer<typeof MultipleChoiceCardsSchema>,
     topic: Tables<"topics">,
     subtopic: Tables<"subtopics">,
-) {
-    for (const card of cards.cards) {
+) : Promise<CardWithAnswers[]> {
+
+    // Combine cards with their answers
+    const cardsWithAnswers: CardWithAnswers[] = [];
+
+    for (const card of cards.cards) 
+      {
         const { data: cardData, error: cardError } = await insertCard(
             token,
             card.question,
@@ -197,7 +202,7 @@ export async function insertGeneratedCards(
 
         const card_id = cardData.id;
 
-        const { error: answerError } = await insertMultipleSelectionCardAnswers(
+        const { data : answers , error: answerError } = await insertMultipleSelectionCardAnswers(
             token,
             card_id,
             card.correctAnswerIndex,
@@ -211,7 +216,12 @@ export async function insertGeneratedCards(
                 answerError,
             );
         }
+        cardsWithAnswers.push({
+          ...cardData,
+          answers
+        });
     }
+    return cardsWithAnswers;
 }
 
 
