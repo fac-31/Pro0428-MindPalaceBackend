@@ -41,7 +41,7 @@ export const generateCards = async (
         const cards = await generateCardsModel(topic.title, subtopic.title);
         insertGeneratedCards(token, cards, topic, subtopic);
 
-        res.status(200).json(cards);
+        res.status(200).json(cards.cards);
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
     }
@@ -74,8 +74,6 @@ export const getCards = async (
         const cards = await getCardsModel(token, topic.id, subtopicTitle);
         const cardsWithAnswers = await getAnswers(token, cards);
         
-        console.log("answers");
-        console.log(cardsWithAnswers);
         res.status(200).json(cardsWithAnswers);
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
