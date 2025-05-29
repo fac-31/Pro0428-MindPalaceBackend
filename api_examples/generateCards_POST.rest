@@ -1,4 +1,4 @@
-POST http://localhost:5000/card/generateCards
+POST http://localhost:5000/card/
 Content-Type: application/json
 
 # Example Response:

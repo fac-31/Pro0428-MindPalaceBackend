@@ -68,7 +68,6 @@ export async function createUserTopic(
     if (userError) throw userError;
 
     const topicInsertData = await createNewTopic(token, title);
-    console.log("inUserTopic ", topicInsertData);
 
     const newTopicStyle: TablesInsert<"topic_styles"> = {
         user_id: userData.user.id,

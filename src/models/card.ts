@@ -6,6 +6,11 @@ import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { createSupabaseClient } from "../supabase/client";
 import openai from "../config/openai";
 
+// Extended card type with answers
+type CardWithAnswers = Tables<'cards'> & {
+  answers: Tables<'select_answers'> | Tables<'free_text_answers'>;
+};
+
 async function insertMultipleSelectionCardAnswers(
     token: string,
     card_id: string,
@@ -119,7 +124,7 @@ export const MultipleChoiceCardsSchema = z.object({
     cards: z.array(MultipleChoiceCardSchema),
 });
 
-export async function generateCardsModel() {
+export async function generateCardsModel(topic : string, subtopic : string) {
     try {
         const response = await openai.chat.completions.create({
             model: "gpt-4o",
@@ -127,7 +132,7 @@ export async function generateCardsModel() {
                 {
                     role: "system",
                     content: `
-You are a quiz generator model. Generate exactly 3 MultipleChoiceCard objects.
+You are a quiz generator model. Generate exactly 10 MultipleChoiceCard objects.
 Each card must match this TypeScript interface:
 
 interface MultipleChoiceCard {
@@ -143,7 +148,7 @@ interface MultipleChoiceCard {
                 {
                     role: "user",
                     content:
-                        "Generate cards that test my knowledge on driving theory.",
+                        `Generate cards that test my knowledge on the topic of ${topic} in the specific sub-topic of ${subtopic}.`,
                 },
             ],
             // 2) Wire up the JSON-Schema you got from Zod:
@@ -176,8 +181,13 @@ export async function insertGeneratedCards(
     cards: z.infer<typeof MultipleChoiceCardsSchema>,
     topic: Tables<"topics">,
     subtopic: Tables<"subtopics">,
-) {
-    for (const card of cards.cards) {
+) : Promise<CardWithAnswers[]> {
+
+    // Combine cards with their answers
+    const cardsWithAnswers: CardWithAnswers[] = [];
+
+    for (const card of cards.cards) 
+      {
         const { data: cardData, error: cardError } = await insertCard(
             token,
             card.question,
@@ -192,7 +202,7 @@ export async function insertGeneratedCards(
 
         const card_id = cardData.id;
 
-        const { error: answerError } = await insertMultipleSelectionCardAnswers(
+        const { data : answers , error: answerError } = await insertMultipleSelectionCardAnswers(
             token,
             card_id,
             card.correctAnswerIndex,
@@ -206,5 +216,137 @@ export async function insertGeneratedCards(
                 answerError,
             );
         }
+        cardsWithAnswers.push({
+          ...cardData,
+          answers
+        });
     }
+    return cardsWithAnswers;
+}
+
+
+export async function getCardsModel(
+  token: string, 
+  topicId: string, 
+  subtopicTitle: string
+): Promise<Tables<'cards'>[]> {
+  try {
+    const supabase = createSupabaseClient(token);
+
+    //select all columns from the cards table
+    //inner join with the subtopic related table returns only card that have a matching subtopic id
+    //supabase knows this because of the foreign key defintion : 
+    //constraint cards_subtopic_id_fkey foreign KEY (subtopic_id) references subtopics (id)
+    const { data, error } = await supabase
+      .from('cards')
+      .select(`
+        *,                      
+        subtopics!inner()       
+      `)
+      .eq('subtopics.topic_id', topicId)
+      .eq('subtopics.title', subtopicTitle);        //all rows that have common subtopic title - they may have distinc subtopic_id - per user.
+
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching cards:', error);
+    throw error;
+  }
+}
+
+export async function getAnswers(
+    token : string,
+    cards : Tables<'cards'>[]) : Promise<CardWithAnswers[]>
+{
+    try
+    {
+
+    const supabase = createSupabaseClient(token);
+
+    if (!cards.length) {
+      return [];
+    }
+
+    // Separate cards by answer type
+    const selectCards = cards.filter(card => card.answer_type === 'select');
+    const freeTextCards = cards.filter(card => card.answer_type === 'free_text');
+    
+    // Get card IDs for batch queries
+    const selectCardIds = selectCards.map(card => card.id);
+    const freeTextCardIds = freeTextCards.map(card => card.id);
+    
+    // Batch query for select answers
+    const selectAnswersPromise = selectCardIds.length > 0 
+      ? supabase
+          .from('select_answers')
+          .select('*')
+          .in('card_id', selectCardIds)
+      : Promise.resolve({ data: [], error: null });
+    
+    // Batch query for free text answers
+    const freeTextAnswersPromise = freeTextCardIds.length > 0
+      ? supabase
+          .from('free_text_answers')
+          .select('*')
+          .in('card_id', freeTextCardIds)
+      : Promise.resolve({ data: [], error: null });
+    
+    // Execute both queries in parallel
+    const [selectAnswersResult, freeTextAnswersResult] = await Promise.all([
+      selectAnswersPromise,
+      freeTextAnswersPromise
+    ]);
+    
+    if (selectAnswersResult.error) {
+      throw selectAnswersResult.error;
+    }
+    
+    if (freeTextAnswersResult.error) {
+      throw freeTextAnswersResult.error;
+    }
+    
+    // Create maps for quick lookup
+    const selectAnswersMap = new Map<string, Tables<'select_answers'>>();
+    const freeTextAnswersMap = new Map<string, Tables<'free_text_answers'>>();
+    
+    selectAnswersResult.data?.forEach(answer => {
+      selectAnswersMap.set(answer.card_id, answer);
+    });
+    
+    freeTextAnswersResult.data?.forEach(answer => {
+      freeTextAnswersMap.set(answer.card_id, answer);
+    });
+    
+    // Combine cards with their answers
+    const cardsWithAnswers: CardWithAnswers[] = [];
+    
+    for (const card of cards) {
+      let answers: Tables<'select_answers'> | Tables<'free_text_answers'> | undefined;
+      
+      if (card.answer_type === 'select') {
+        answers = selectAnswersMap.get(card.id);
+      } else if (card.answer_type === 'free_text') {
+        answers = freeTextAnswersMap.get(card.id);
+      }
+      
+      if (answers) {
+        cardsWithAnswers.push({
+          ...card,
+          answers
+        });
+      } else {
+        console.warn(`No answers found for card ${card.id} with answer_type ${card.answer_type}`);
+      }
+    }
+    
+    return cardsWithAnswers;
+    
+  } catch (error) {
+    console.error('Error fetching cards with answers:', error);
+    throw error;
+  }
 }

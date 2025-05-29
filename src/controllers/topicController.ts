@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { getUserTopics, createUserTopic } from "../models/topics";
 
 export const getTopics = async (req: Request, res: Response): Promise<void> => {
-    console.log("entered topic model");
     try {
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
@@ -30,7 +29,6 @@ export const addUserTopic = async (
     req: Request,
     res: Response,
 ): Promise<void> => {
-    console.log("entered add topic model");
     try {
         // Get Auth
         const token = req.headers.authorization?.split(" ")[1];
