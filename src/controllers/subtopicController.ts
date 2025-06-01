@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import {
     getSubtopicByTopicId,
+    getSubtopicByTopicIdAndSubtopicTitle,
     createNewSubtopic,
-    deleteSubtopicRow
+    deleteSubtopicRow,
 } from "../models/subtopics";
 import { getTopicByTitle } from "../models/topics";
 
@@ -41,6 +42,47 @@ export const getSubtopics = async (
         }
 
         res.status(200).json(subtopics);
+    } catch (error) {
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+export const doesSubtopicExist = async (
+    req: Request,
+    res: Response,
+): Promise<void> => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            res.status(401).json({ error: "Unauthorized: no token provided" });
+        }
+
+        const topicTitle: string = decodeURIComponent(
+            req.query.topic as string,
+        );
+
+        const subtopicTitle: string = decodeURIComponent(
+            req.query.subtopic as string,
+        );
+
+        const { data: topic, error: topicError } = await getTopicByTitle(
+            token,
+            topicTitle,
+        );
+
+        if (topicError) {
+            console.error(topicError);
+            res.status(400).json({ error: topicError.message });
+        }
+
+        const { subtopic, error: subtopicError } =
+            await getSubtopicByTopicIdAndSubtopicTitle(
+                token,
+                topic.id,
+                subtopicTitle,
+            );
+
+        res.status(200).json({ exists: !subtopicError });
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
     }
