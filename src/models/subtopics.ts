@@ -43,7 +43,6 @@ export async function createNewSubtopic(
     design: string,
     colour: string,
 ) {
-
     try {
         // Validate input
         if (!title.trim()) {
@@ -118,6 +117,53 @@ export async function getSubtopicByTopicIdAndSubtopicTitle(
 
     return { subtopic: data, error } as {
         subtopic: Tables<"subtopics"> | null;
+        error: PostgrestError | null;
+    };
+}
+
+export async function deleteSubtopicRow(token: string, id: string) {
+    const supabase = createSupabaseClient(token);
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    const { data, error } = await supabase
+        .from("subtopics")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select()
+        .single();
+
+    return { data, error } as {
+        data: Tables<"subtopics"> | null;
+        error: PostgrestError | null;
+    };
+}
+
+export async function deleteAllTopicSubtopics(token: string, topicId: string) {
+    const supabase = createSupabaseClient(token);
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    console.log("Deleting user subtopics with ID:", topicId);
+
+    const { data, error } = await supabase
+        .from("subtopics")
+        .delete()
+        .eq("topic_id", topicId)
+        .eq("user_id", user.id)
+        .select();
+
+    if (error) {
+        console.log("Error deleting subtopics:", error);
+    } else {
+        console.log("Deleted subtopics:", data);
+    }
+
+    return { subtopics: data, error } as {
+        subtopics: Tables<"subtopics">[] | null;
         error: PostgrestError | null;
     };
 }

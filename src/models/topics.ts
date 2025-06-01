@@ -102,6 +102,28 @@ export async function getTopicByTitle(token: string, title: string) {
     };
 }
 
+export async function getUserTopicByTitle(token: string, title: string) {
+    const supabase = createSupabaseClient(token);
+
+    const { data: topic, error: topicError } = await getTopicByTitle(token, title);
+
+    if (topicError) {
+        console.error("Error fetching topic by title:", topicError);
+        return { data: null, error: topicError };
+    }
+    
+    const { data, error } = await supabase
+        .from("topic_styles")
+        .select("*")
+        .eq("topic_id", topic.id)
+        .single();
+
+    return { data, error } as {
+        data: Tables<"topic_styles"> | null;
+        error: PostgrestError | null;
+    };
+}
+
 // ENTRY POINT FROM TOPIC CONTROLLER
 export async function getUserTopics(token: string) {
     const supabase = createSupabaseClient(token);
@@ -125,6 +147,23 @@ export async function getUserTopics(token: string) {
 
     return { userTopics: data, error } as {
         userTopics: UserTopics | null;
+        error: PostgrestError | null;
+    };
+}
+
+export async function deleteUserTopicRow(token: string, id: string) {
+    const supabase = createSupabaseClient(token);
+    console.log("Deleting user topic with ID:", id);
+
+    const { data, error } = await supabase
+        .from("topic_styles")
+        .delete()
+        .eq("id", id)
+        .select()
+        .single();
+
+    return { topic: data, error } as {
+        topic: Tables<"topic_styles"> | null;
         error: PostgrestError | null;
     };
 }
