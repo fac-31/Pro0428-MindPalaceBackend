@@ -128,3 +128,20 @@ export async function getUserTopics(token: string) {
         error: PostgrestError | null;
     };
 }
+
+export async function deleteUserTopicRow(token: string, id: string) {
+    const supabase = createSupabaseClient(token);
+    console.log("Deleting user topic with ID:", id);
+
+    const { data, error } = await supabase
+        .from("topic_styles")
+        .delete()
+        .eq("id", id)
+        .select()
+        .single();
+
+    return { topic: data, error } as {
+        topic: Tables<"topic_styles"> | null;
+        error: PostgrestError | null;
+    };
+}
