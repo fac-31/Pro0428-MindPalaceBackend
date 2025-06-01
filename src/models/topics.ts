@@ -102,6 +102,28 @@ export async function getTopicByTitle(token: string, title: string) {
     };
 }
 
+export async function getUserTopicByTitle(token: string, title: string) {
+    const supabase = createSupabaseClient(token);
+
+    const { data: topic, error: topicError } = await getTopicByTitle(token, title);
+
+    if (topicError) {
+        console.error("Error fetching topic by title:", topicError);
+        return { data: null, error: topicError };
+    }
+    
+    const { data, error } = await supabase
+        .from("topic_styles")
+        .select("*")
+        .eq("topic_id", topic.id)
+        .single();
+
+    return { data, error } as {
+        data: Tables<"topic_styles"> | null;
+        error: PostgrestError | null;
+    };
+}
+
 // ENTRY POINT FROM TOPIC CONTROLLER
 export async function getUserTopics(token: string) {
     const supabase = createSupabaseClient(token);
