@@ -4,10 +4,12 @@ import { generateCardsModel,
     getCardsModel, 
     getAnswers, 
     getMasteryByCardID ,
-    updateMastery } from "../models/card";
+    updateMastery,
+    getUser, 
+    insertNewMastery} from "../models/card";
 import { getTopicByTitle } from "../models/topics";
 import { getSubtopicByTopicIdAndSubtopicTitle } from "../models/subtopics";
-
+import { TablesInsert, Tables } from "../supabase/types/supabase";
 export const generateCards = async (
     req: Request,
     res: Response,
@@ -110,14 +112,7 @@ export const recordAnswer = async (
 
         if (data)
         {
-            data.attempts++;
-            if (isCorrect)
-            {
-                data.correct_attempts++;
-            }
-
-            data.mastery = (data.correct_attempts / data.attempts);
-
+            recalculateMastery(data, isCorrect);
             //update existing data
             const { data : updatedData, error } = await updateMastery(
                 token, 
@@ -133,14 +128,46 @@ export const recordAnswer = async (
         }
         else
         {
+            //get user ID
+            const { data : user , error : userError} = await getUser(token);
 
+            let newCardMastery: TablesInsert<"mastery"> = {
+                    card_id: card_id,
+                    user_id: user.id,
+                    attempts: 0,
+                    correct_attempts:  0,
+                    mastery: 0 
+                };
+
+            recalculateMastery(newCardMastery, isCorrect);
+
+            const { data , error } = await insertNewMastery(
+                token, 
+                newCardMastery
+            );
+
+            if (error)
+            {
+                console.error(error);
+                res.status(400).json({ error: error.message });
+            }
 
         }
-
-
 
         res.status(200).json();
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+
+function recalculateMastery(data : Tables<"mastery"> | TablesInsert<"mastery">, isCorrect : boolean)
+{
+    data.attempts++;
+    if (isCorrect)
+    {
+        data.correct_attempts++;
+    }
+
+    data.mastery = (data.correct_attempts / data.attempts);
+}

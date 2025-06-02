@@ -1,5 +1,6 @@
 import { string, z } from "zod";
-
+import { User } from '@supabase/supabase-js';
+import { AuthError } from '@supabase/supabase-js';
 import { PostgrestError } from "@supabase/supabase-js";
 import { Tables, TablesInsert } from "../supabase/types/supabase";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
@@ -380,3 +381,35 @@ export async function updateMastery(token: string, masteryData : Tables<"mastery
     };
 }
 
+export async function insertNewMastery(token: string, newData : TablesInsert<"mastery"> ) {
+
+        const supabase = createSupabaseClient(token);
+        const { data, error } = await supabase
+            .from("mastery")
+            .insert(newData)
+            .select()
+            .single();
+        
+        return { data, error };
+}
+
+export async function getUser(token: string) {
+    const supabase = createSupabaseClient(token);
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+        return { 
+            data: null, 
+            error: authError || new Error('Not authenticated') 
+        };
+    }
+
+    return { 
+        data: user, 
+        error: null 
+    } as {
+        data: User | null;
+        error: AuthError | Error | null;
+    };
+}
