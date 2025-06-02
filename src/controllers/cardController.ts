@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
-import { generateCardsModel, insertGeneratedCards, getCardsModel, getAnswers } from "../models/card";
+import { generateCardsModel, 
+    insertGeneratedCards, 
+    getCardsModel, 
+    getAnswers, 
+    getMasteryByCardID ,
+    updateMastery } from "../models/card";
 import { getTopicByTitle } from "../models/topics";
 import { getSubtopicByTopicIdAndSubtopicTitle } from "../models/subtopics";
 
@@ -74,6 +79,67 @@ export const getCards = async (
         const cardsWithAnswers = await getAnswers(token, cards);
         
         res.status(200).json(cardsWithAnswers);
+    } catch (error) {
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+
+export const recordAnswer = async (
+    req: Request,
+    res: Response,
+): Promise<void> => {
+    try {
+        const isCorrect: boolean = req.body.isCorrect;
+        const card_id: string = req.body.card_id;
+
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            res.status(401).json({ error: "Unauthorized: no token provided" });
+        }
+
+        const { data, error } = await getMasteryByCardID(
+            token,
+            card_id
+        );
+
+        if (error) {
+            console.error(error);
+            res.status(400).json({ error: error.message });
+        }
+
+        if (data)
+        {
+            data.attempts++;
+            if (isCorrect)
+            {
+                data.correct_attempts++;
+            }
+
+            data.mastery = (data.correct_attempts / data.attempts);
+
+            //update existing data
+            const { data : updatedData, error } = await updateMastery(
+                token, 
+                data
+            );
+
+            if (error)
+            {
+                console.error(error);
+                res.status(400).json({ error: error.message });
+            }
+
+        }
+        else
+        {
+
+
+        }
+
+
+
+        res.status(200).json();
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
     }

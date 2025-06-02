@@ -350,3 +350,33 @@ export async function getAnswers(
     throw error;
   }
 }
+
+export async function getMasteryByCardID(token: string, card_id: string) {
+    const supabase = createSupabaseClient(token);
+    const { data, error } = await supabase
+        .from("mastery")
+        .select("*")
+        .eq("card_id", card_id)
+        .maybeSingle(); // Returns null if no records, no error
+
+    return { data, error } as {
+        data: Tables<"mastery"> | null;
+        error: PostgrestError | null;
+    };
+}
+
+export async function updateMastery(token: string, masteryData : Tables<"mastery"> ) {
+    const supabase = createSupabaseClient(token);
+    const { data, error } = await supabase
+        .from("mastery")
+        .update(masteryData)
+        .eq("id", masteryData.id)
+        .select()
+        .single();
+
+    return { data, error } as {
+        data: Tables<"mastery"> ;
+        error: PostgrestError | null;
+    };
+}
+
