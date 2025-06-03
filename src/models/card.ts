@@ -1,5 +1,6 @@
 import { string, z } from "zod";
-
+import { User } from '@supabase/supabase-js';
+import { AuthError } from '@supabase/supabase-js';
 import { PostgrestError } from "@supabase/supabase-js";
 import { Tables, TablesInsert } from "../supabase/types/supabase";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
@@ -223,8 +224,6 @@ export async function insertGeneratedCards(
     }
     return cardsWithAnswers;
 }
-
-
 export async function getCardsModel(
   token: string, 
   topicId: string, 
@@ -233,25 +232,28 @@ export async function getCardsModel(
   try {
     const supabase = createSupabaseClient(token);
 
-    //select all columns from the cards table
-    //inner join with the subtopic related table returns only card that have a matching subtopic id
-    //supabase knows this because of the foreign key defintion : 
-    //constraint cards_subtopic_id_fkey foreign KEY (subtopic_id) references subtopics (id)
+    // Select all columns from the cards table
+    // Inner join with subtopics table to filter by topic and subtopic
+    // Left join with mastery table to include cards with no mastery records
     const { data, error } = await supabase
       .from('cards')
       .select(`
         *,                      
-        subtopics!inner()       
+        subtopics!inner(),
+        mastery(*)
       `)
       .eq('subtopics.topic_id', topicId)
-      .eq('subtopics.title', subtopicTitle);        //all rows that have common subtopic title - they may have distinc subtopic_id - per user.
-
-
+      .eq('subtopics.title', subtopicTitle)
     if (error) {
       throw error;
     }
 
-    return data || [];
+    const filtered = (data || []).filter(card => {
+      const m = card.mastery?.[0]; 
+      return !m || m.attempts < 3 || m.mastery < 0.75;
+    }).map(({ mastery, ...card }) => card);
+
+    return filtered || [];
   } catch (error) {
     console.error('Error fetching cards:', error);
     throw error;
@@ -349,4 +351,70 @@ export async function getAnswers(
     console.error('Error fetching cards with answers:', error);
     throw error;
   }
+}
+
+export async function getMasteryByCardID(token: string, card_id: string) {
+    const supabase = createSupabaseClient(token);
+    const { data, error } = await supabase
+        .from("mastery")
+        .select("*")
+        .eq("card_id", card_id)
+        .maybeSingle(); // Returns null if no records, no error
+
+    return { data, error } as {
+        data: Tables<"mastery"> | null;
+        error: PostgrestError | null;
+    };
+}
+
+export async function updateMastery(token: string, masteryData : Tables<"mastery"> ) {
+    const supabase = createSupabaseClient(token);
+    const { data, error } = await supabase
+        .from("mastery")
+        .update(masteryData)
+        .eq("id", masteryData.id)
+        .select()
+        .single();
+
+    return { data, error } as {
+        data: Tables<"mastery"> ;
+        error: PostgrestError | null;
+    };
+}
+
+export async function insertNewMastery(token: string, newData : TablesInsert<"mastery">, card_id : string ) {
+
+      const supabase = createSupabaseClient(token);
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+      if (authError || !user) {
+          return { 
+              data: null, 
+              error: authError || new Error('Not authenticated') 
+          };
+      }
+
+      newData.card_id = card_id;
+      newData.user_id = user.id;
+
+      const { data, error } = await supabase
+          .from("mastery")
+          .insert(newData)
+          .select()
+          .single();
+      
+      return { data, error };
+}
+
+
+export function recalculateMastery(data : Tables<"mastery"> | TablesInsert<"mastery">, isCorrect : boolean)
+{
+    data.attempts++;
+    if (isCorrect)
+    {
+        data.correct_attempts++;
+    }
+
+    data.mastery = (data.correct_attempts / data.attempts);
 }
