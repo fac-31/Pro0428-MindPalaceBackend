@@ -381,35 +381,39 @@ export async function updateMastery(token: string, masteryData : Tables<"mastery
     };
 }
 
-export async function insertNewMastery(token: string, newData : TablesInsert<"mastery"> ) {
+export async function insertNewMastery(token: string, newData : TablesInsert<"mastery">, card_id : string ) {
 
-        const supabase = createSupabaseClient(token);
-        const { data, error } = await supabase
-            .from("mastery")
-            .insert(newData)
-            .select()
-            .single();
+      const supabase = createSupabaseClient(token);
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        return { data, error };
+      if (authError || !user) {
+          return { 
+              data: null, 
+              error: authError || new Error('Not authenticated') 
+          };
+      }
+
+      newData.card_id = card_id;
+      newData.user_id = user.id;
+
+      const { data, error } = await supabase
+          .from("mastery")
+          .insert(newData)
+          .select()
+          .single();
+      
+      return { data, error };
 }
 
-export async function getUser(token: string) {
-    const supabase = createSupabaseClient(token);
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-        return { 
-            data: null, 
-            error: authError || new Error('Not authenticated') 
-        };
+export function recalculateMastery(data : Tables<"mastery"> | TablesInsert<"mastery">, isCorrect : boolean)
+{
+    data.attempts++;
+    if (isCorrect)
+    {
+        data.correct_attempts++;
     }
 
-    return { 
-        data: user, 
-        error: null 
-    } as {
-        data: User | null;
-        error: AuthError | Error | null;
-    };
+    data.mastery = (data.correct_attempts / data.attempts);
 }
