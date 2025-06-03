@@ -224,8 +224,6 @@ export async function insertGeneratedCards(
     }
     return cardsWithAnswers;
 }
-
-
 export async function getCardsModel(
   token: string, 
   topicId: string, 
@@ -234,19 +232,19 @@ export async function getCardsModel(
   try {
     const supabase = createSupabaseClient(token);
 
-    //select all columns from the cards table
-    //inner join with the subtopic related table returns only card that have a matching subtopic id
-    //supabase knows this because of the foreign key defintion : 
-    //constraint cards_subtopic_id_fkey foreign KEY (subtopic_id) references subtopics (id)
+    // Select all columns from the cards table
+    // Inner join with subtopics table to filter by topic and subtopic
+    // Left join with mastery table to include cards with no mastery records
     const { data, error } = await supabase
       .from('cards')
       .select(`
         *,                      
-        subtopics!inner()       
+        subtopics!inner(),
+        mastery(*)
       `)
       .eq('subtopics.topic_id', topicId)
-      .eq('subtopics.title', subtopicTitle);        //all rows that have common subtopic title - they may have distinc subtopic_id - per user.
-
+      .eq('subtopics.title', subtopicTitle)
+      .or('attempts.lt.3,mastery.lt.0.75,id.is.null', { foreignTable: 'mastery' }); // Less than 3 attempts OR mastery < 0.75 OR no mastery record
 
     if (error) {
       throw error;
