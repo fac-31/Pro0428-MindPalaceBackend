@@ -102,7 +102,6 @@ export const recordAnswer = async (
             res.status(401).json({ error: "Unauthorized: no token provided" });
         }
 
-        console.log("before getting mastery");
         const { data, error } = await getMasteryByCardID(
             token,
             card_id
@@ -115,8 +114,6 @@ export const recordAnswer = async (
 
         if (data)
         {
-            console.log("update existing mastery");
-
             recalculateMastery(data, isCorrect);
             //update existing data
             const { data : updatedData, error } = await updateMastery(
@@ -133,7 +130,6 @@ export const recordAnswer = async (
         }
         else
         {
-            console.log("insert new mastery");
             let newCardMastery: TablesInsert<"mastery"> = {
                     card_id: "", //filled at insertNewMastery below
                     user_id: "", //filled at insertNewMastery below.

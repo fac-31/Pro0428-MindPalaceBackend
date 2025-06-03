@@ -244,13 +244,16 @@ export async function getCardsModel(
       `)
       .eq('subtopics.topic_id', topicId)
       .eq('subtopics.title', subtopicTitle)
-      .or('attempts.lt.3,mastery.lt.0.75,id.is.null', { foreignTable: 'mastery' }); // Less than 3 attempts OR mastery < 0.75 OR no mastery record
-
     if (error) {
       throw error;
     }
 
-    return data || [];
+    const filtered = (data || []).filter(card => {
+      const m = card.mastery?.[0]; 
+      return !m || m.attempts < 3 || m.mastery < 0.75;
+    }).map(({ mastery, ...card }) => card);
+
+    return filtered || [];
   } catch (error) {
     console.error('Error fetching cards:', error);
     throw error;
