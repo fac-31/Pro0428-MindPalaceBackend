@@ -10,6 +10,8 @@ import { generateCardsModel,
 import { getTopicByTitle } from "../models/topics";
 import { getSubtopicByTopicIdAndSubtopicTitle } from "../models/subtopics";
 import { TablesInsert, Tables } from "../supabase/types/supabase";
+
+
 export const generateCards = async (
     req: Request,
     res: Response,
@@ -100,6 +102,7 @@ export const recordAnswer = async (
             res.status(401).json({ error: "Unauthorized: no token provided" });
         }
 
+        console.log("before getting mastery");
         const { data, error } = await getMasteryByCardID(
             token,
             card_id
@@ -112,6 +115,8 @@ export const recordAnswer = async (
 
         if (data)
         {
+            console.log("update existing mastery");
+
             recalculateMastery(data, isCorrect);
             //update existing data
             const { data : updatedData, error } = await updateMastery(
@@ -131,6 +136,7 @@ export const recordAnswer = async (
             //get user ID
             const { data : user , error : userError} = await getUser(token);
 
+            console.log("insert new mastery");
             let newCardMastery: TablesInsert<"mastery"> = {
                     card_id: card_id,
                     user_id: user.id,
