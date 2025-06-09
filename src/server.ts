@@ -7,9 +7,20 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const ENV_MODE = process.env.ENV_MODE || "development";
+let frontendUrl: string;
+
+if (ENV_MODE === "development") {
+    console.log("Running in development mode");
+    frontendUrl = "http://localhost:3000";
+} else if (ENV_MODE === "production") {
+    console.log("Running in production mode");
+    frontendUrl = "https://mind-palace-fe.vercel.app"; // replace with your production URL
+}
 app.use(
     cors({
-        origin: "http://localhost:3000",
+        origin: frontendUrl,
         credentials: true, // if you're sending cookies or Authorization headers
     }),
 );
