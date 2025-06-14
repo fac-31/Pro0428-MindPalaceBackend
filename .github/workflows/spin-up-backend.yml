@@ -1,6 +1,7 @@
 name: Spin Up Backend
 
 on:
+  workflow_dispatch:
   workflow_call:
     secrets:
       OPENAI_KEY:
