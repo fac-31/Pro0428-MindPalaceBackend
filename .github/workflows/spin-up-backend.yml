@@ -1,0 +1,29 @@
+name: Spin Up Backend
+
+on:
+  workflow_call:
+    secrets:
+      OPENAI_KEY:
+        required: true
+      SUPABASE_ANON_KEY:
+        required: true
+
+jobs:
+  spin-up-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout backend code
+        uses: actions/checkout@v3
+
+      - name: Generate .env file from secrets
+        run: |
+          echo OPENAI_KEY=${{ secrets.OPENAI_KEY }} >> .env
+          echo SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} >> .env
+          echo PORT=5000 >> .env
+
+      - name: Build and run backend
+        run: docker-compose up -d
+
+      - name: Wait for backend to be ready
+        run: sleep 10
